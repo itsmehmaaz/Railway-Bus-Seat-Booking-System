@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seat Booking System | Segment Tree</title>
+    <meta name="description"
+        content="Interactive bus/railway seat booking system powered by segment tree data structure">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>Seat Booking System</h1>
+            </div>
+            <div class="header-badge">
+                <span class="badge">Segment Tree</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Controls -->
+            <section class="control-panel glass-card">
+                <h2>Book a Journey</h2>
+
+                <!-- Station Range Selector -->
+                <div class="station-selector">
+                    <div class="station-group">
+                        <label for="fromStation">From Station</label>
+                        <select id="fromStation" class="station-select"></select>
+                    </div>
+                    <div class="journey-arrow">→</div>
+                    <div class="station-group">
+                        <label for="toStation">To Station</label>
+                        <select id="toStation" class="station-select"></select>
+                    </div>
+                </div>
+
+                <!-- Visual Journey -->
+                <div class="journey-visual">
+                    <div class="journey-track">
+                        <div class="journey-progress" id="journeyProgress"></div>
+                    </div>
+                    <div class="station-markers" id="stationMarkers"></div>
+                </div>
+
+                <!-- Seat Selection -->
+                <div class="seat-selection">
+                    <label>Select Seat</label>
+                    <div class="seat-grid" id="seatGrid"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="bookBtn">
+                        Book Seat
+                    </button>
+                    <button class="btn btn-secondary" id="cancelBtn">
+                        Cancel
+                    </button>
+                    <button class="btn btn-accent" id="queryBtn">
+                        Find Available
+                    </button>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-dot available"></span> Available
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot booked"></span> Booked
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot selected"></span> Selected
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot partial"></span> Partially Booked
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Booking Log & Visualization -->
+            <section class="info-panel">
+                <!-- Algorithm Info -->
+                <div class="algorithm-card glass-card">
+                    <h3>Segment Tree</h3>
+                    <div class="tree-container" id="treeContainer">
+                        <p class="placeholder-text">Select a seat to view tree state</p>
+                    </div>
+                </div>
+
+                <!-- Booking History -->
+                <div class="history-card glass-card">
+                    <h3>History</h3>
+                    <div class="history-log" id="historyLog">
+                        <div class="log-entry welcome">
+                            <span class="log-time">--:--</span>
+                            <span class="log-message">Select stations and a seat to begin.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-card glass-card">
+                    <h3>Stats</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="totalSeats">0</span>
+                            <span class="stat-label">Seats</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="totalStations">0</span>
+                            <span class="stat-label">Stations</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="activeBookings">0</span>
+                            <span class="stat-label">Bookings</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="index.js"></script>
+</body>
+
+</html>
