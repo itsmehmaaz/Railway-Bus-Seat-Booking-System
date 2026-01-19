@@ -174,78 +174,79 @@ class SegmentTree {
     /**
      * Get tree structure for visualization
      * 
-     * This builds a level-by-level view of the segment tree, showing the
-     * EFFECTIVE value of each node (tree value + all pending lazy updates).
-     * 
-     * The visualization helps understand the current state of the tree:
-     * - Level 0: Root node covering entire range [0, n)
-     * - Level 1: Two nodes covering [0, mid) and [mid, n)
-     * - Level 2: Four nodes for quarter ranges
-     * - And so on...
+     * This creates a balanced visualization where all leaf nodes (single segments)
+     * appear on the same bottom line, regardless of their actual depth in the tree.
      * 
      * Each node's value represents the MAXIMUM occupancy in its range.
      * 
      * @returns {Array} Array of levels, each containing node objects with range info
      */
     getTreeVisualization() {
-        const levels = [];
-        
         // Early termination if tree is empty
-        if (this.n === 0) return levels;
+        if (this.n === 0) return [];
 
-        // Build tree level by level
-        const buildLevel = (nodes) => {
-            const level = [];
-            const nextNodes = [];
+        // Collect all nodes with their metadata
+        const allNodes = [];
 
-            for (const { node, start, end, accLazy } of nodes) {
-                // Skip invalid ranges
-                if (start >= end || start >= this.n) continue;
+        const collectNodes = (node, start, end, accLazy, depth) => {
+            if (start >= end || start >= this.n) return;
 
-                // Calculate effective value:
-                // This is what the node REALLY represents after all pending updates
-                // = stored tree value + accumulated lazy from all ancestors
-                const effectiveVal = this.tree[node] + accLazy;
-                
-                // Store node info with range for better visualization
-                level.push({
-                    value: effectiveVal,
-                    range: `[${start},${Math.min(end, this.n)})`
-                });
+            const effectiveVal = this.tree[node] + accLazy;
+            const isLeaf = (end - start === 1);
 
-                // Only add children if we haven't reached leaf level
-                if (end - start > 1) {
-                    // Calculate how lazy values propagate to children:
-                    // Children inherit parent's accumulated lazy + parent's own lazy
-                    const childAccLazy = accLazy + this.lazy[node];
-                    const mid = Math.floor((start + end) / 2);
-                    
-                    nextNodes.push({ 
-                        node: 2 * node + 1, 
-                        start: start, 
-                        end: mid, 
-                        accLazy: childAccLazy 
-                    });
-                    nextNodes.push({ 
-                        node: 2 * node + 2, 
-                        start: mid, 
-                        end: end, 
-                        accLazy: childAccLazy 
-                    });
-                }
-            }
+            allNodes.push({
+                node,
+                start,
+                end,
+                value: effectiveVal,
+                range: `[${start + 1},${Math.min(end, this.n) + 1})`,
+                depth,
+                isLeaf,
+                accLazy
+            });
 
-            if (level.length > 0) {
-                levels.push(level);
-                // Limit depth to keep visualization manageable
-                if (levels.length < 5 && nextNodes.length > 0) {
-                    buildLevel(nextNodes);
-                }
+            if (!isLeaf) {
+                const childAccLazy = accLazy + this.lazy[node];
+                const mid = Math.floor((start + end) / 2);
+                collectNodes(2 * node + 1, start, mid, childAccLazy, depth + 1);
+                collectNodes(2 * node + 2, mid, end, childAccLazy, depth + 1);
             }
         };
 
-        // Start from root with no accumulated lazy
-        buildLevel([{ node: 0, start: 0, end: this.n, accLazy: 0 }]);
+        // Collect all nodes
+        collectNodes(0, 0, this.n, 0, 0);
+
+        // Find max depth among leaf nodes
+        const maxLeafDepth = Math.max(...allNodes.filter(n => n.isLeaf).map(n => n.depth));
+
+        // Assign display level: 
+        // - Leaf nodes: all go to bottom level (maxLeafDepth)
+        // - Internal nodes depth 0-2: show at their depth
+        // - Deep internal nodes (depth > 2 like [7,9)): hide them
+        allNodes.forEach(node => {
+            if (node.isLeaf) {
+                node.displayLevel = maxLeafDepth;
+            } else if (node.depth <= 2) {
+                node.displayLevel = node.depth;
+            } else {
+                node.displayLevel = -1; // Hide deep intermediate nodes
+            }
+        });
+
+        // Group by display level
+        const levels = [];
+        for (let level = 0; level <= maxLeafDepth; level++) {
+            const nodesAtLevel = allNodes
+                .filter(n => n.displayLevel === level)
+                .sort((a, b) => a.start - b.start);  // Sort by start position
+
+            if (nodesAtLevel.length > 0) {
+                levels.push(nodesAtLevel.map(n => ({
+                    value: n.value,
+                    range: n.range
+                })));
+            }
+        }
 
         return levels;
     }
@@ -679,16 +680,23 @@ class UIController {
             return;
         }
 
-        let html = `<div style="text-align: center; margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
-            Seat ${this.selectedSeat + 1} - Segments Booked
+        let html = `<div style="text-align: center; margin-bottom: 0.75rem; font-size: 0.8rem; color: var(--text-primary); font-weight: 500;">
+            Seat ${this.selectedSeat + 1} - Segment Tree Visualization
+        </div>
+        <div style="text-align: center; margin-bottom: 0.5rem; font-size: 0.65rem; color: var(--text-muted);">
+            Each node shows: Value (max occupancy) | Range (segment coverage)
         </div>`;
 
         levels.forEach((level, levelIdx) => {
             if (levelIdx > 4) return;
             html += '<div class="tree-level">';
-            level.forEach(val => {
-                const nodeClass = val > 0 ? 'tree-node booked' : 'tree-node';
-                html += `<div class="${nodeClass}">${val}</div>`;
+            level.forEach(node => {
+                // node is now an object with {value, range}
+                const nodeClass = node.value > 0 ? 'tree-node booked' : 'tree-node';
+                html += `<div class="${nodeClass}" title="Range: ${node.range}, Max Occupancy: ${node.value}">
+                    <div style="font-weight: 600;">${node.value}</div>
+                    <div style="font-size: 0.6rem; opacity: 0.8;">${node.range}</div>
+                </div>`;
             });
             html += '</div>';
         });
